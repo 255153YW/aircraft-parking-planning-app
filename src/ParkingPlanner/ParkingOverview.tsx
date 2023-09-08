@@ -1,28 +1,18 @@
 import { useState, useEffect, useMemo, useCallback, ReactElement } from 'react';
-import DatePicker from 'react-date-picker';
+import DatePicker from "react-datepicker";
 import { Chart } from "react-google-charts";
 import { Flight, ParkingArea, ParkingSpot } from "../API/parkingPlanningAPI";
 import { get } from "../API/util";
 import "./ParkingOverview.scss";
-import 'react-date-picker/dist/DatePicker.css';
-import 'react-calendar/dist/Calendar.css';
+import "react-datepicker/dist/react-datepicker.css";
 
 interface P {}
-
-type ValuePiece = Date | null;
-
-type DatePickerValue = ValuePiece | [ValuePiece, ValuePiece];
 
 export default function ParkingOverview(props: P) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [parkingareas, setParkingAreas] = useState<ParkingArea[]>([]);
-  const [selectedDateValue, setSelectedDateValue] = useState<DatePickerValue>(new Date('2023-01-02'));
+  const [selectedDateValue, setSelectedDateValue] = useState<Date|null>(new Date('2023-01-02'));
   const [selectedMode, setSelectedMode] = useState<string>('day');
-  const chartOptions = {
-/*    'legend': 'left',
-    'title': 'My Big Pie Chart',
-    'is3D': true,*/
-  }
 
   const parkingSpots = useMemo((): Array<ParkingSpot> => {
     let pSpots: Array<ParkingSpot> = [];
@@ -42,7 +32,7 @@ export default function ParkingOverview(props: P) {
         const startDateValue = new Date(startDateTime);
         const endDateValue = new Date(endDateTime);
         const { name: pSpotName } = parkingSpot;
-        if (pSpotName && (endDateValue >= selectedDateValue) && (startDateValue <= selectedDateValue)) {
+        if (pSpotName && (endDateValue >= selectedDateValue) && (startDateValue <= new Date(selectedDateValue.getTime() + 24 * 60 * 60 * 1000))) {
           const currentDictValue = dictionary.get(pSpotName);
           if (!currentDictValue) {
             dictionary.set(pSpotName, [flight]);
@@ -60,6 +50,7 @@ export default function ParkingOverview(props: P) {
     data.push([
       { type: "string", id: "Position" },
       { type: "string", id: "Name" },
+      { type: 'string', role: 'style' },
       { type: "date", id: "Start" },
       { type: "date", id: "End" },
     ]);
@@ -74,17 +65,25 @@ export default function ParkingOverview(props: P) {
               data.push([
                 pSpotName,
                 aircraft?.registrationCode,
+                null,
                 new Date(startDateTime),
                 new Date(endDateTime)
               ]);
             }
           })
+        } else if (selectedDateValue) {
+          data.push([
+            pSpotName,
+            '',
+            'opacity: 0;',
+            selectedDateValue,
+            selectedDateValue
+          ]);
         }
-        
       }
     })
     return data;
-  }, [flights, parkingSpots, parkedFlightsDictionary])
+  }, [flights, parkingSpots, parkedFlightsDictionary, selectedDateValue])
 
   useEffect(() => {
     get({
@@ -119,9 +118,9 @@ export default function ParkingOverview(props: P) {
         ))}
       </div>
       </div>
-      <DatePicker onChange={setSelectedDateValue} value={selectedDateValue} />
+      <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
       <div className='parking-overview'>
-        <Chart chartType="Timeline" data={chartData} options={chartOptions} height='10em' />
+        <Chart chartType="Timeline" data={chartData} height='26em' />
       </div>
   </>
   );
