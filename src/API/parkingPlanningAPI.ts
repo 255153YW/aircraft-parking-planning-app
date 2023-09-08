@@ -16,6 +16,7 @@ export interface Aircraft {
 }
 
 export interface Flight {
+  id: string;
   aircraft?: Aircraft;
   parkingSpot?: ParkingSpot;
   /** @format date-time */
