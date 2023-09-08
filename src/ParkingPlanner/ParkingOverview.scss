@@ -1,4 +1,8 @@
 ﻿.parking-overview {
   width: calc(100% - 2em);
   padding: 1em 2em;
+  .tooltip {
+    color: #000000;
+    padding: 0.5em;
+  }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, ReactElement } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DatePicker from "react-datepicker";
 import { Chart } from "react-google-charts";
 import { Flight, ParkingArea, ParkingSpot } from "../API/parkingPlanningAPI";
@@ -11,8 +11,15 @@ interface P {}
 export default function ParkingOverview(props: P) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [parkingareas, setParkingAreas] = useState<ParkingArea[]>([]);
-  const [selectedDateValue, setSelectedDateValue] = useState<Date|null>(new Date('2023-01-02'));
-  const [selectedMode, setSelectedMode] = useState<string>('day');
+  const [selectedDateValue, setSelectedDateValue] = useState<Date|null>();
+
+
+  const getUTCDate = (dateStringOrMiliseconds: string | number): Date => {
+    var dateFromString = new Date(dateStringOrMiliseconds);
+    return new Date(Date.UTC(dateFromString.getUTCFullYear(), dateFromString.getUTCMonth(),
+      dateFromString.getUTCDate(), dateFromString.getUTCHours(),
+      dateFromString.getUTCMinutes(), dateFromString.getUTCSeconds()));
+  }
 
   const parkingSpots = useMemo((): Array<ParkingSpot> => {
     let pSpots: Array<ParkingSpot> = [];
@@ -29,10 +36,10 @@ export default function ParkingOverview(props: P) {
     flights.forEach(flight => {
       const { parkingSpot, startDateTime, endDateTime } = flight;
       if (selectedDateValue && parkingSpot && startDateTime && endDateTime) {
-        const startDateValue = new Date(startDateTime);
-        const endDateValue = new Date(endDateTime);
+        const startDateValue = getUTCDate(startDateTime);
+        const endDateValue = getUTCDate(endDateTime);
         const { name: pSpotName } = parkingSpot;
-        if (pSpotName && (endDateValue >= selectedDateValue) && (startDateValue <= new Date(selectedDateValue.getTime() + 24 * 60 * 60 * 1000))) {
+        if (pSpotName && (endDateValue >= getUTCDate(selectedDateValue.getTime() - 1 * 60 * 60 * 1000)) && (startDateValue <= getUTCDate(selectedDateValue.getTime() + 23 * 60 * 60 * 1000))) {
           const currentDictValue = dictionary.get(pSpotName);
           if (!currentDictValue) {
             dictionary.set(pSpotName, [flight]);
@@ -45,36 +52,64 @@ export default function ParkingOverview(props: P) {
     return dictionary;
   }, [flights, selectedDateValue])
 
+  const createCustomHTMLContent = (registrationCode: string | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
+    return (
+      '<div class="tooltip">' +
+      '<div>' + registrationCode + '</div>' +
+      '<div>' + pSpotName + '</div>' +
+      '<div>' + startDateTime + '</div>' +
+      '<div>' + endDateTime + '</div>' +
+      '</div>'
+    );
+  }
+
   const chartData = useMemo(() => {
     const data: Array<any> = [];
     data.push([
       { type: "string", id: "Position" },
       { type: "string", id: "Name" },
-      { type: 'string', role: 'style' },
+      { type: "string", role: "tooltip", p: { html: true } },
+      { type: "string", role: "style" },
       { type: "date", id: "Start" },
       { type: "date", id: "End" },
     ]);
     parkingSpots.forEach(pSpot => {
       const { name: pSpotName } = pSpot;
-      if (pSpotName) {
+      if (pSpotName && selectedDateValue) {
         const pSpotFlights = parkedFlightsDictionary.get(pSpotName);
         if (pSpotFlights) {
           pSpotFlights.forEach(pSpotFlight => {
             const { aircraft, endDateTime, startDateTime } = pSpotFlight;
+           
             if (startDateTime && endDateTime) {
+              const startTimeValue = getUTCDate(startDateTime);
+              const endTimeValue = getUTCDate(endDateTime);
+              const endOfSelectedDay = getUTCDate(selectedDateValue.getTime() + 23 * 60 * 60 * 1000)
+              const startOfSelectedDay = getUTCDate(selectedDateValue.getTime() - 1 * 60 * 60 * 1000)
+              let adjustedStartTime = startTimeValue;
+              let adjustedEndTime = endTimeValue;
+
+              if (endOfSelectedDay < endTimeValue) {
+                adjustedEndTime = endOfSelectedDay;
+              }
+              if (startOfSelectedDay > startTimeValue) {
+                adjustedStartTime = startOfSelectedDay;
+              }
               data.push([
                 pSpotName,
                 aircraft?.registrationCode,
+                createCustomHTMLContent(aircraft?.registrationCode, pSpotName, startDateTime, endDateTime),
                 null,
-                new Date(startDateTime),
-                new Date(endDateTime)
+                adjustedStartTime,
+                adjustedEndTime
               ]);
             }
           })
-        } else if (selectedDateValue) {
+        } else {
           data.push([
             pSpotName,
             '',
+            null,
             'opacity: 0;',
             selectedDateValue,
             selectedDateValue
@@ -100,8 +135,7 @@ export default function ParkingOverview(props: P) {
 
   const alignLeft: React.CSSProperties = { textAlign: "left" };
   const alignRight: React.CSSProperties = { textAlign: "right" };
-  console.log("!!!parking_areas", parkingareas)
-  console.log("!!!flights", flights)
+
   return (
     <>
       <div>
