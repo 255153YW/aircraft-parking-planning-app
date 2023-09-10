@@ -23,4 +23,12 @@
   <ItemGroup>
     <Content Remove="package-lock.json" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="src\ParkingPlanner\ParkingChart.tsx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Include="src\ParkingPlanner\ParkingChart.tsx" />
+  </ItemGroup>
 </Project>
