@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import DatePicker from "react-datepicker";
 import { Chart } from "react-google-charts";
-import { Flight, ParkingArea, ParkingSpot } from "../API/parkingPlanningAPI";
+import { Flight, ParkingArea, ParkingSpot, Aircraft } from "../API/parkingPlanningAPI";
 import { get } from "../API/util";
 import "./ParkingOverview.scss";
 import "react-datepicker/dist/react-datepicker.css";
@@ -48,7 +48,7 @@ export default function ParkingOverview(props: P) {
         const startDateValue = getUTCDate(startDateTime);
         const endDateValue = getUTCDate(endDateTime);
         const { name: pSpotName } = parkingSpot;
-        if (pSpotName && (endDateValue >= getUTCDate(selectedDateWithoutOffset.getTime() - (1 * 60 * 60 * 1000))) && (startDateValue <= getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000)))) {
+        if (pSpotName && (endDateValue >= selectedDateWithoutOffset) && (startDateValue <= getUTCDate(selectedDateWithoutOffset.getTime() + (24 * 60 * 60 * 1000)))) {
           const currentDictValue = dictionary.get(pSpotName);
           if (!currentDictValue) {
             dictionary.set(pSpotName, [flight]);
@@ -61,10 +61,12 @@ export default function ParkingOverview(props: P) {
     return dictionary;
   }, [flights, selectedDateWithoutOffset])
 
-  const customHTMLTooltip = (registrationCode: string | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
+  const customHTMLTooltip = (aircraft: Aircraft | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
+    const { registrationCode, aircraftType, footprintSqm } = aircraft || {};
     return (
       '<div class="tooltip">' +
       '<div>' + registrationCode + '</div>' +
+      '<div>' + aircraftType + ' - ' + footprintSqm +'m2 </div>' +
       '<div>' + pSpotName + '</div>' +
       '<div>' + startDateTime + '</div>' +
       '<div>' + endDateTime + '</div>' +
@@ -102,8 +104,8 @@ export default function ParkingOverview(props: P) {
             if (startDateTime && endDateTime) {
               const startTimeValue = getUTCDate(startDateTime);
               const endTimeValue = getUTCDate(endDateTime);
-              const endOfSelectedDay = getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000))
-              const startOfSelectedDay = getUTCDate(selectedDateWithoutOffset.getTime() - (1 * 60 * 60 * 1000))
+              const endOfSelectedDay = getUTCDate(selectedDateWithoutOffset.getTime() + (24 * 60 * 60 * 1000))
+              const startOfSelectedDay = selectedDateWithoutOffset;
               let adjustedStartTime = startTimeValue;
               let adjustedEndTime = endTimeValue;
 
@@ -115,8 +117,8 @@ export default function ParkingOverview(props: P) {
               }
               data.push([
                 pSpotName,
-                `${aircraft?.registrationCode} - ${aircraft?.footprintSqm}m2`,
-                customHTMLTooltip(aircraft?.registrationCode, pSpotName, startDateTime, endDateTime),
+                `${aircraft?.registrationCode} - ${aircraft?.aircraftType} - ${aircraft?.footprintSqm}m2`,
+                customHTMLTooltip(aircraft, pSpotName, startDateTime, endDateTime),
                 null,
                 adjustedStartTime,
                 adjustedEndTime,
@@ -130,7 +132,7 @@ export default function ParkingOverview(props: P) {
             emptyHtmlTooltip(pSpotName),
             'opacity: 0;',
             selectedDateWithoutOffset,
-            getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000)),
+            getUTCDate(selectedDateWithoutOffset.getTime() + (24 * 60 * 60 * 1000)),
           ]);
         }
       }
@@ -151,27 +153,11 @@ export default function ParkingOverview(props: P) {
     });
   }, []);
 
-  const alignLeft: React.CSSProperties = { textAlign: "left" };
-  const alignRight: React.CSSProperties = { textAlign: "right" };
   return (
     <div className='parking-overview'>
-      <div>
-        <header style={alignLeft}>{"Parking areas:"}</header>
-        <div role={"list"} style={alignRight}>
-          {parkingareas?.map((p) => (
-              <div>{p.name}</div>
-          ))}
-        </div>
-        <header style={alignLeft}>{"Flights:"}</header>
-        <div style={alignRight}>
-          {flights?.map((p) => (
-              <div>{p.parkingSpot?.name + ": " + p.aircraft?.registrationCode}</div>
-          ))}
-        </div>
-      </div>
       <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
       <div className='chart'>
-        <Chart chartType="Timeline" data={chartData} height='40em' />
+        <Chart chartType="Timeline" data={chartData} height='40em' width='90vw' />
       </div>
   </div>
   );

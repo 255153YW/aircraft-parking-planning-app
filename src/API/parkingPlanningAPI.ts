@@ -13,6 +13,7 @@ export interface Aircraft {
   registrationCode?: string | null;
   /** @format double */
   footprintSqm?: number;
+  aircraftType?: string | null;
 }
 
 export interface Flight {
