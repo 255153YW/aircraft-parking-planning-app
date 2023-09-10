@@ -1,15 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import DatePicker from "react-datepicker";
-import { Chart } from "react-google-charts";
-import { Flight, ParkingArea, ParkingSpot, Aircraft } from "../API/parkingPlanningAPI";
+import { Flight, ParkingArea } from "../API/parkingPlanningAPI";
 import { get } from "../API/util";
 import "./ParkingOverview.scss";
 import "react-datepicker/dist/react-datepicker.css";
 import ParkingChart from './ParkingChart';
+import ParkingScheduler from './ParkingScheduler';
 
 export default function ParkingOverview() {
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [parkingareas, setParkingAreas] = useState<ParkingArea[]>([]);
+  const [parkingAreas, setParkingAreas] = useState<ParkingArea[]>([]);
   const [selectedDateValue, setSelectedDateValue] = useState<Date | null>(new Date());
   const [errors, setErrors] = useState<string>();
 
@@ -25,12 +25,13 @@ export default function ParkingOverview() {
       route: "parkingareas",
     });
   }, []);
-
   return (
     <div className='parking-overview'>
+      <h2>Flight Parking Scheduler</h2>
       <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
-      {flights?.length && parkingareas?.length ?
-        <ParkingChart flights={flights} parkingAreas={parkingareas} selectedDateValue={selectedDateValue} />
+      <ParkingScheduler parkingAreas={parkingAreas} selectedDateValue={selectedDateValue} />
+      {flights?.length && parkingAreas?.length ?
+        <ParkingChart flights={flights} parkingAreas={parkingAreas} selectedDateValue={selectedDateValue} />
         : errors
           ? errors
           : 'loading...'

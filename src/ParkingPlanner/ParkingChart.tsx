@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { Chart } from "react-google-charts";
 import { Flight, ParkingArea, ParkingSpot, Aircraft } from "../API/parkingPlanningAPI";
 import "./ParkingOverview.scss";
@@ -10,7 +10,7 @@ interface ParkingChartProps {
   selectedDateValue?: Date|null;
 }
 
-export default function ParkingOverview({ flights, parkingAreas, selectedDateValue }: ParkingChartProps) {
+export default function ParkingChart({ flights, parkingAreas, selectedDateValue }: ParkingChartProps) {
 
   const selectedDateWithoutOffset = useMemo(() => {
     let dateToConvert = new Date();
@@ -19,7 +19,7 @@ export default function ParkingOverview({ flights, parkingAreas, selectedDateVal
     }
     return new Date(dateToConvert.getFullYear(), dateToConvert.getMonth(),
       dateToConvert.getDate());
-  }, [selectedDateValue])
+  }, [selectedDateValue]);
 
 
   const getUTCDate = (dateStringOrMiliseconds: string | number): Date => {
@@ -37,7 +37,7 @@ export default function ParkingOverview({ flights, parkingAreas, selectedDateVal
       }
     });
     return pSpots;
-  }, [parkingAreas])
+  }, [parkingAreas]);
 
   const parkedFlightsDictionary = useMemo((): Map<string, Array<Flight>> => {
     const dictionary = new Map<string, Array<Flight>>();
@@ -47,7 +47,7 @@ export default function ParkingOverview({ flights, parkingAreas, selectedDateVal
         const startDateValue = getUTCDate(startDateTime);
         const endDateValue = getUTCDate(endDateTime);
         const { name: pSpotName } = parkingSpot;
-        if (pSpotName && (endDateValue >= selectedDateWithoutOffset) && (startDateValue <= new Date(selectedDateWithoutOffset.getTime() + (24 * 60 * 60 * 1000)))) {
+        if ((endDateValue >= selectedDateWithoutOffset) && (startDateValue <= new Date(selectedDateWithoutOffset.getTime() + (24 * 60 * 60 * 1000)))) {
           const currentDictValue = dictionary.get(pSpotName);
           if (!currentDictValue) {
             dictionary.set(pSpotName, [flight]);
@@ -58,7 +58,7 @@ export default function ParkingOverview({ flights, parkingAreas, selectedDateVal
       }
     });
     return dictionary;
-  }, [flights, selectedDateWithoutOffset])
+  }, [flights, selectedDateWithoutOffset]);
 
   const customHTMLTooltip = (aircraft: Aircraft | null | undefined, pSpot: ParkingSpot, startDateTime: string | undefined, endDateTime: string | undefined) => {
     const { registrationCode, aircraftType, footprintSqm } = aircraft || {};
@@ -98,7 +98,7 @@ export default function ParkingOverview({ flights, parkingAreas, selectedDateVal
     ]);
     parkingSpots.forEach(pSpot => {
       const { name: pSpotName } = pSpot;
-      if (pSpotName && selectedDateWithoutOffset) {
+      if (selectedDateWithoutOffset) {
         const pSpotFlights = parkedFlightsDictionary.get(pSpotName);
         if (pSpotFlights) {
           pSpotFlights.forEach(pSpotFlight => {
@@ -141,7 +141,7 @@ export default function ParkingOverview({ flights, parkingAreas, selectedDateVal
       }
     })
     return data;
-  }, [parkingSpots, parkedFlightsDictionary, selectedDateWithoutOffset])
+  }, [parkingSpots, parkedFlightsDictionary, selectedDateWithoutOffset]);
 
   return (
     <div className='chart'>

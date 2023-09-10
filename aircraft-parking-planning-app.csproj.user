@@ -2,6 +2,11 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <TypeScriptCompile Update="src\ParkingPlanner\ParkingScheduler.tsx">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
+  </ItemGroup>
+  <ItemGroup>
     <TypeScriptCompile Update="src\ParkingPlanner\ParkingChart.tsx">
       <SubType>Code</SubType>
     </TypeScriptCompile>

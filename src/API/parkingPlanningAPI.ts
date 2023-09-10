@@ -34,9 +34,9 @@ export interface ParkingArea {
 }
 
 export interface ParkingSpot {
-  name?: string | null;
+  name: string;
   /** @format double */
-  footprintSqm?: number;
+  footprintSqm: number;
 }
 
 export type QueryParamsType = Record<string | number, any>;
