@@ -11,11 +11,20 @@ interface P {}
 export default function ParkingOverview(props: P) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [parkingareas, setParkingAreas] = useState<ParkingArea[]>([]);
-  const [selectedDateValue, setSelectedDateValue] = useState<Date|null>();
+  const [selectedDateValue, setSelectedDateValue] = useState<Date | null>(new Date());
+
+  const selectedDateWithoutOffset = useMemo(() => {
+    let dateToConvert = new Date();
+    if (selectedDateValue) {
+      dateToConvert = selectedDateValue;
+    }
+    return new Date(dateToConvert.getFullYear(), dateToConvert.getMonth(),
+      dateToConvert.getDate());
+  }, [selectedDateValue])
 
 
   const getUTCDate = (dateStringOrMiliseconds: string | number): Date => {
-    var dateFromString = new Date(dateStringOrMiliseconds);
+    const dateFromString = new Date(dateStringOrMiliseconds);
     return new Date(Date.UTC(dateFromString.getUTCFullYear(), dateFromString.getUTCMonth(),
       dateFromString.getUTCDate(), dateFromString.getUTCHours(),
       dateFromString.getUTCMinutes(), dateFromString.getUTCSeconds()));
@@ -35,11 +44,11 @@ export default function ParkingOverview(props: P) {
     const dictionary = new Map<string, Array<Flight>>();
     flights.forEach(flight => {
       const { parkingSpot, startDateTime, endDateTime } = flight;
-      if (selectedDateValue && parkingSpot && startDateTime && endDateTime) {
+      if (selectedDateWithoutOffset && parkingSpot && startDateTime && endDateTime) {
         const startDateValue = getUTCDate(startDateTime);
         const endDateValue = getUTCDate(endDateTime);
         const { name: pSpotName } = parkingSpot;
-        if (pSpotName && (endDateValue >= getUTCDate(selectedDateValue.getTime() - 1 * 60 * 60 * 1000)) && (startDateValue <= getUTCDate(selectedDateValue.getTime() + 23 * 60 * 60 * 1000))) {
+        if (pSpotName && (endDateValue >= getUTCDate(selectedDateWithoutOffset.getTime() - (1 * 60 * 60 * 1000))) && (startDateValue <= getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000)))) {
           const currentDictValue = dictionary.get(pSpotName);
           if (!currentDictValue) {
             dictionary.set(pSpotName, [flight]);
@@ -50,7 +59,7 @@ export default function ParkingOverview(props: P) {
       }
     });
     return dictionary;
-  }, [flights, selectedDateValue])
+  }, [flights, selectedDateWithoutOffset])
 
   const createCustomHTMLContent = (registrationCode: string | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
     return (
@@ -75,7 +84,7 @@ export default function ParkingOverview(props: P) {
     ]);
     parkingSpots.forEach(pSpot => {
       const { name: pSpotName } = pSpot;
-      if (pSpotName && selectedDateValue) {
+      if (pSpotName && selectedDateWithoutOffset) {
         const pSpotFlights = parkedFlightsDictionary.get(pSpotName);
         if (pSpotFlights) {
           pSpotFlights.forEach(pSpotFlight => {
@@ -84,8 +93,8 @@ export default function ParkingOverview(props: P) {
             if (startDateTime && endDateTime) {
               const startTimeValue = getUTCDate(startDateTime);
               const endTimeValue = getUTCDate(endDateTime);
-              const endOfSelectedDay = getUTCDate(selectedDateValue.getTime() + 23 * 60 * 60 * 1000)
-              const startOfSelectedDay = getUTCDate(selectedDateValue.getTime() - 1 * 60 * 60 * 1000)
+              const endOfSelectedDay = getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000))
+              const startOfSelectedDay = getUTCDate(selectedDateWithoutOffset.getTime() - (1 * 60 * 60 * 1000))
               let adjustedStartTime = startTimeValue;
               let adjustedEndTime = endTimeValue;
 
@@ -111,14 +120,14 @@ export default function ParkingOverview(props: P) {
             '',
             null,
             'opacity: 0;',
-            selectedDateValue,
-            selectedDateValue
+            selectedDateWithoutOffset,
+            getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000))
           ]);
         }
       }
     })
     return data;
-  }, [flights, parkingSpots, parkedFlightsDictionary, selectedDateValue])
+  }, [parkingSpots, parkedFlightsDictionary, selectedDateWithoutOffset])
 
   useEffect(() => {
     get({
@@ -135,7 +144,6 @@ export default function ParkingOverview(props: P) {
 
   const alignLeft: React.CSSProperties = { textAlign: "left" };
   const alignRight: React.CSSProperties = { textAlign: "right" };
-
   return (
     <>
       <div>
