@@ -61,23 +61,27 @@ export default function ParkingOverview(props: P) {
     return dictionary;
   }, [flights, selectedDateWithoutOffset])
 
-  const customHTMLTooltip = (aircraft: Aircraft | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
+  const customHTMLTooltip = (aircraft: Aircraft | null | undefined, pSpot: ParkingSpot, startDateTime: string | undefined, endDateTime: string | undefined) => {
     const { registrationCode, aircraftType, footprintSqm } = aircraft || {};
+    const { name: pSpotName, footprintSqm: pFootprintSqm } = pSpot;
     return (
       '<div class="tooltip">' +
       '<div>' + registrationCode + '</div>' +
       '<div>' + aircraftType + ' - ' + footprintSqm +'m2 </div>' +
       '<div>' + pSpotName + '</div>' +
+      '<div>' + pFootprintSqm + 'm2 </div>' +
       '<div>' + startDateTime + '</div>' +
       '<div>' + endDateTime + '</div>' +
       '</div>'
     );
   }
 
-  const emptyHtmlTooltip = (pSpotName: string) => {
+  const emptyHtmlTooltip = (pSpot: ParkingSpot) => {
+    const { name: pSpotName, footprintSqm: pFootprintSqm } = pSpot;
     return (
       '<div class="tooltip">' +
       '<div>' + pSpotName + '</div>' +
+      '<div>' + pFootprintSqm + '</div>' +
       '<div>No flight assigned for the day.</div>' +
       '</div>'
     );
@@ -118,7 +122,7 @@ export default function ParkingOverview(props: P) {
               data.push([
                 pSpotName,
                 `${aircraft?.registrationCode} - ${aircraft?.aircraftType} - ${aircraft?.footprintSqm}m2`,
-                customHTMLTooltip(aircraft, pSpotName, startDateTime, endDateTime),
+                customHTMLTooltip(aircraft, pSpot, startDateTime, endDateTime),
                 null,
                 adjustedStartTime,
                 adjustedEndTime,
@@ -129,7 +133,7 @@ export default function ParkingOverview(props: P) {
           data.push([
             pSpotName,
             '',
-            emptyHtmlTooltip(pSpotName),
+            emptyHtmlTooltip(pSpot),
             'opacity: 0;',
             selectedDateWithoutOffset,
             getUTCDate(selectedDateWithoutOffset.getTime() + (24 * 60 * 60 * 1000)),
@@ -157,7 +161,7 @@ export default function ParkingOverview(props: P) {
     <div className='parking-overview'>
       <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
       <div className='chart'>
-        <Chart chartType="Timeline" data={chartData} height='40em' width='90vw' />
+        <Chart chartType="Timeline" data={chartData} height='40em' width='99vw' />
       </div>
   </div>
   );
