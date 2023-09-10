@@ -61,13 +61,22 @@ export default function ParkingOverview(props: P) {
     return dictionary;
   }, [flights, selectedDateWithoutOffset])
 
-  const createCustomHTMLContent = (registrationCode: string | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
+  const customHTMLTooltip = (registrationCode: string | null | undefined, pSpotName: string, startDateTime: string | undefined, endDateTime: string | undefined) => {
     return (
       '<div class="tooltip">' +
       '<div>' + registrationCode + '</div>' +
       '<div>' + pSpotName + '</div>' +
       '<div>' + startDateTime + '</div>' +
       '<div>' + endDateTime + '</div>' +
+      '</div>'
+    );
+  }
+
+  const emptyHtmlTooltip = (pSpotName: string) => {
+    return (
+      '<div class="tooltip">' +
+      '<div>' + pSpotName + '</div>' +
+      '<div>No flight assigned for the day.</div>' +
       '</div>'
     );
   }
@@ -106,11 +115,11 @@ export default function ParkingOverview(props: P) {
               }
               data.push([
                 pSpotName,
-                aircraft?.registrationCode,
-                createCustomHTMLContent(aircraft?.registrationCode, pSpotName, startDateTime, endDateTime),
+                `${aircraft?.registrationCode} - ${aircraft?.footprintSqm}m2`,
+                customHTMLTooltip(aircraft?.registrationCode, pSpotName, startDateTime, endDateTime),
                 null,
                 adjustedStartTime,
-                adjustedEndTime
+                adjustedEndTime,
               ]);
             }
           })
@@ -118,10 +127,10 @@ export default function ParkingOverview(props: P) {
           data.push([
             pSpotName,
             '',
-            null,
+            emptyHtmlTooltip(pSpotName),
             'opacity: 0;',
             selectedDateWithoutOffset,
-            getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000))
+            getUTCDate(selectedDateWithoutOffset.getTime() + (23 * 60 * 60 * 1000)),
           ]);
         }
       }
@@ -145,25 +154,25 @@ export default function ParkingOverview(props: P) {
   const alignLeft: React.CSSProperties = { textAlign: "left" };
   const alignRight: React.CSSProperties = { textAlign: "right" };
   return (
-    <>
+    <div className='parking-overview'>
       <div>
-      <header style={alignLeft}>{"Parking areas:"}</header>
-      <div role={"list"} style={alignRight}>
-        {parkingareas?.map((p) => (
-            <div>{p.name}</div>
-        ))}
-      </div>
-      <header style={alignLeft}>{"Flights:"}</header>
-      <div style={alignRight}>
-        {flights?.map((p) => (
-            <div>{p.parkingSpot?.name + ": " + p.aircraft?.registrationCode}</div>
-        ))}
-      </div>
+        <header style={alignLeft}>{"Parking areas:"}</header>
+        <div role={"list"} style={alignRight}>
+          {parkingareas?.map((p) => (
+              <div>{p.name}</div>
+          ))}
+        </div>
+        <header style={alignLeft}>{"Flights:"}</header>
+        <div style={alignRight}>
+          {flights?.map((p) => (
+              <div>{p.parkingSpot?.name + ": " + p.aircraft?.registrationCode}</div>
+          ))}
+        </div>
       </div>
       <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
-      <div className='parking-overview'>
-        <Chart chartType="Timeline" data={chartData} height='26em' />
+      <div className='chart'>
+        <Chart chartType="Timeline" data={chartData} height='40em' />
       </div>
-  </>
+  </div>
   );
 }
