@@ -80,7 +80,7 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
     return (
       '<div class="tooltip">' +
       '<div>' + pSpotName + '</div>' +
-      '<div>' + pFootprintSqm + '</div>' +
+      '<div>' + pFootprintSqm + 'm2 </div>' +
       '<div>No flight assigned for the day.</div>' +
       '</div>'
     );

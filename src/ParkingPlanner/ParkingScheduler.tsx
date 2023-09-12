@@ -1,7 +1,7 @@
-﻿import { useState, useEffect, useMemo, SyntheticEvent } from 'react';
+﻿import { useState, useMemo, SyntheticEvent } from 'react';
 import DatePicker from "react-datepicker";
-import { Flight, ParkingArea, ParkingSpot } from "../API/parkingPlanningAPI";
-import { get } from "../API/util";
+import { ParkingArea, ParkingSpot } from "../API/parkingPlanningAPI";
+import { post } from "../API/util";
 import "./ParkingOverview.scss";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -11,12 +11,14 @@ interface ParkingSchedulerProps {
 }
 export default function ParkingScheduler({ parkingAreas, selectedDateValue }: ParkingSchedulerProps) {
   const [registrationCode, setRegistrationCode] = useState('');
-  const [type, setType] = useState('');
-  const [footprint, setFootprint] = useState('0');
-  const [selectedParkingSpot, setSelectedParkingSpot] = useState('');
-  const [startDateValue, setStartDateValue] = useState<Date | null>();
-  const [endDateValue, setEndDateValue] = useState<Date | null>();
+  const [aircraftType, setAircraftType] = useState('');
+  const [footprintSqm, setFootprintSqm] = useState('');
+  const [selectedParkingSpotName, setSelectedParkingSpotName] = useState('');
+  const [startDateTimeValue, setStartDateTimeValue] = useState<Date | null>();
+  const [endDateTimeValue, setEndDateTimeValue] = useState<Date | null>();
   const [isFormDisabled, setIsFormDisabled] = useState(false);
+  const [errors, setErrors] = useState('');
+
 
   const parkingSpots = useMemo((): Array<ParkingSpot> => {
     let pSpots: Array<ParkingSpot> = [];
@@ -29,42 +31,77 @@ export default function ParkingScheduler({ parkingAreas, selectedDateValue }: Pa
   }, [parkingAreas]);
 
   const renderParkingSpotOptions = () => parkingSpots.map((pSpot) => {
-    const { name: pSpotName } = pSpot;
+    const { name: pSpotName, footprintSqm } = pSpot;
     return (
-      <option value={pSpotName}>{pSpotName}</option>
+      <option value={pSpotName}>{pSpotName} - {footprintSqm}m2</option>
     )
   });
+
+  const clearFormData = () => {
+    setRegistrationCode('');
+    setAircraftType('');
+    setFootprintSqm('');
+    setSelectedParkingSpotName('');
+    setStartDateTimeValue(null)
+    setEndDateTimeValue(null)
+  }
 
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
     setIsFormDisabled(true);
-
+    post({
+      handleDone: (r) => {
+        clearFormData();
+        setIsFormDisabled(false);
+      },
+      handleFail: (r) => {
+        setErrors(r);
+        setIsFormDisabled(false);
+      },
+      data: JSON.stringify({
+        aircraft: {
+          registrationCode,
+          footprintSqm,
+          aircraftType,
+        },
+        parkingSpot: {
+          name: selectedParkingSpotName,
+        },
+        startDateTime: startDateTimeValue?.toString(),
+        endDateTime: endDateTimeValue?.toString()
+      }),
+      route: "flights",
+    });
   }
 
   return (
     <form className='scheduler' onSubmit={handleSubmit}>
       <p>Aircraft Info</p>
       <input value={registrationCode} onChange={e => setRegistrationCode(e.target.value)} placeholder='registration code' disabled={isFormDisabled} required />
-      <input value={type} onChange={e => setType(e.target.value)} placeholder='aircraft type' disabled={isFormDisabled} required />
-      <input value={footprint} type='number' onChange={e => setFootprint(e.target.value)} placeholder='footprint (m2)' disabled={isFormDisabled} required />
+      <input value={aircraftType} onChange={e => setAircraftType(e.target.value)} placeholder='aircraft type' disabled={isFormDisabled} required />
+      <input value={footprintSqm} type='number' onChange={e => setFootprintSqm(e.target.value)} placeholder='footprint (m2)' disabled={isFormDisabled} required />
 
       <p>Parking Spot</p>
       <select
-        value={selectedParkingSpot}
-        onChange={e => setSelectedParkingSpot(e.target.value)}
+        value={selectedParkingSpotName}
+        onChange={e => setSelectedParkingSpotName(e.target.value)}
         disabled={isFormDisabled}
         required
       >
+        <option value=''>-- Select Parking Spot --</option>
         {renderParkingSpotOptions()}
       </select>
 
       <p>Start Date</p>
-      <DatePicker onChange={setStartDateValue} selected={startDateValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
+      <DatePicker onChange={setStartDateTimeValue} selected={startDateTimeValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
 
       <p>End Date</p>
-      <DatePicker onChange={setEndDateValue} selected={endDateValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
+      <DatePicker onChange={setEndDateTimeValue} selected={endDateTimeValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
       <p></p>
       <input type="submit" value="Submit" disabled={isFormDisabled} />
+      {errors &&
+        <p>{errors}</p>
+      }
     </form>
   );
 }

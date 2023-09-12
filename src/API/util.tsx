@@ -1,43 +1,54 @@
-import * as $ from "jquery";
+import axios, { AxiosRequestConfig } from 'axios';
 
 export interface DecoratedRequest {
   route: string;
   handleDone: (r: any) => void;
   handleFail: (e: string) => void;
+  data?: string|null,
 }
-export function get(request: DecoratedRequest): JQueryXHR {
+
+export function get(request: DecoratedRequest) {
   request.route = "https://localhost:7029/" + request.route;
-  let jquerySettings = createJQuerySettings(request);
-  jquerySettings.method = "GET";
-  jquerySettings.dataType = "json";
+  let axiosSettings = createAxiosSettings(request);
+  axiosSettings.method = "GET";
+  axiosSettings.responseType = "json";
 
-  return send(jquerySettings, request);
+  send(axiosSettings, request);
 }
 
-function createJQuerySettings(request: DecoratedRequest): JQueryAjaxSettings {
-  let settings: JQueryAjaxSettings = {
-    xhrFields: {
-      withCredentials: false,
-    },
-    headers: {},
-    crossDomain: false,
+export function post(request: DecoratedRequest) {
+  request.route = "https://localhost:7029/" + request.route;
+  const axiosSettings = createAxiosSettings(request);
+  axiosSettings.method = "POST";
+  axiosSettings.headers = {
+    'Content-Type': 'application/json'
+  }
+  console.log("!!!json-string-data", axiosSettings)
+  send(axiosSettings, request);
+}
+
+function createAxiosSettings(request: DecoratedRequest): AxiosRequestConfig {
+  let settings: AxiosRequestConfig = {
     url: request.route,
   };
-  settings.crossDomain = true;
+  if (request.data) {
+    settings.data = request.data;
+  }
+
   return settings;
 }
 
 function send(
-  jquerySettings: JQueryAjaxSettings,
+  axiosSettings: AxiosRequestConfig,
   decoratedRequest: DecoratedRequest
 ) {
-  let xhr = $.ajax(jquerySettings);
+  let xhr = axios(axiosSettings);
   xhr
-    .done((response) => {
-      decoratedRequest.handleDone(response);
+    .then((response) => {
+      decoratedRequest.handleDone(response.data);
     })
-    .fail((jqXHR, textStatus, errorThrown) => {
-      decoratedRequest.handleFail(textStatus.toString());
+    .catch((error) => {
+      decoratedRequest.handleFail(error.message);
     });
   return xhr;
 }
