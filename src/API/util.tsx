@@ -4,6 +4,7 @@ export interface DecoratedRequest {
   route: string;
   handleDone: (r: any) => void;
   handleFail: (e: string) => void;
+  handleFinally: () => void;
   data?: string|null,
 }
 
@@ -49,6 +50,9 @@ function send(
     })
     .catch((error) => {
       decoratedRequest.handleFail(error.message);
+    })
+    .finally(() => {
+      decoratedRequest.handleFinally();
     });
   return xhr;
 }

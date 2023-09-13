@@ -1,5 +1,7 @@
-﻿import { useState, useMemo, SyntheticEvent } from 'react';
+﻿import { useState, useMemo, useCallback, SyntheticEvent } from 'react';
 import DatePicker from "react-datepicker";
+import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns'
 import { ParkingArea, ParkingSpot } from "../API/parkingPlanningAPI";
 import { post } from "../API/util";
 import "./ParkingOverview.scss";
@@ -8,12 +10,13 @@ import "react-datepicker/dist/react-datepicker.css";
 interface ParkingSchedulerProps {
   parkingAreas: Array<ParkingArea>;
   selectedDateValue?: Date | null;
+  setRequestUUID: Function;
 }
-export default function ParkingScheduler({ parkingAreas, selectedDateValue }: ParkingSchedulerProps) {
+export default function ParkingScheduler({ parkingAreas, selectedDateValue, setRequestUUID }: ParkingSchedulerProps) {
   const [registrationCode, setRegistrationCode] = useState('');
   const [aircraftType, setAircraftType] = useState('');
   const [footprintSqm, setFootprintSqm] = useState('');
-  const [selectedParkingSpotName, setSelectedParkingSpotName] = useState('');
+  const [selectedParkingSpotIndex, setSelectedParkingSpotIndex] = useState('');
   const [startDateTimeValue, setStartDateTimeValue] = useState<Date | null>();
   const [endDateTimeValue, setEndDateTimeValue] = useState<Date | null>();
   const [isFormDisabled, setIsFormDisabled] = useState(false);
@@ -30,18 +33,18 @@ export default function ParkingScheduler({ parkingAreas, selectedDateValue }: Pa
     return pSpots;
   }, [parkingAreas]);
 
-  const renderParkingSpotOptions = () => parkingSpots.map((pSpot) => {
+  const renderParkingSpotOptions = useCallback(() => parkingSpots.map((pSpot, index) => {
     const { name: pSpotName, footprintSqm } = pSpot;
     return (
-      <option value={pSpotName}>{pSpotName} - {footprintSqm}m2</option>
+      <option value={index}>{pSpotName} - {footprintSqm}m2</option>
     )
-  });
+  }), [parkingSpots]);
 
   const clearFormData = () => {
     setRegistrationCode('');
     setAircraftType('');
     setFootprintSqm('');
-    setSelectedParkingSpotName('');
+    setSelectedParkingSpotIndex('');
     setStartDateTimeValue(null)
     setEndDateTimeValue(null)
   }
@@ -52,23 +55,24 @@ export default function ParkingScheduler({ parkingAreas, selectedDateValue }: Pa
     post({
       handleDone: (r) => {
         clearFormData();
-        setIsFormDisabled(false);
+        setRequestUUID(uuidv4())
       },
       handleFail: (r) => {
         setErrors(r);
+      },
+      handleFinally: () => {
         setIsFormDisabled(false);
       },
       data: JSON.stringify({
+        id: uuidv4(),
         aircraft: {
           registrationCode,
           footprintSqm,
           aircraftType,
         },
-        parkingSpot: {
-          name: selectedParkingSpotName,
-        },
-        startDateTime: startDateTimeValue?.toString(),
-        endDateTime: endDateTimeValue?.toString()
+        parkingSpot: parkingSpots[Number(selectedParkingSpotIndex)],
+        startDateTime: format(startDateTimeValue||new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+        endDateTime: format(endDateTimeValue || new Date(), "yyyy-MM-dd'T'HH:mm:ss")
       }),
       route: "flights",
     });
@@ -83,8 +87,8 @@ export default function ParkingScheduler({ parkingAreas, selectedDateValue }: Pa
 
       <p>Parking Spot</p>
       <select
-        value={selectedParkingSpotName}
-        onChange={e => setSelectedParkingSpotName(e.target.value)}
+        value={selectedParkingSpotIndex}
+        onChange={e => setSelectedParkingSpotIndex(e.target.value)}
         disabled={isFormDisabled}
         required
       >
