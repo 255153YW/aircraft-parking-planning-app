@@ -1,5 +1,5 @@
 ﻿import { useMemo } from 'react';
-import { Chart } from "react-google-charts";
+import { Chart, ReactGoogleChartEvent } from "react-google-charts";
 import { Flight, ParkingArea, ParkingSpot, Aircraft } from "../API/parkingPlanningAPI";
 import "./ParkingOverview.scss";
 import "react-datepicker/dist/react-datepicker.css";
@@ -143,9 +143,26 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
     return data;
   }, [parkingSpots, parkedFlightsDictionary, selectedDateWithoutOffset]);
 
+  const chartEvents: ReactGoogleChartEvent[] = [
+    {
+      eventName: "select",
+      callback: ({ chartWrapper }) => {
+        const chart = chartWrapper.getChart();
+        const selection = chart.getSelection();
+        if (selection.length === 1) {
+          const [selectedItem] = selection;
+          const dataTable = chartWrapper.getDataTable();
+          const { row, column } = selectedItem;
+          console.log("You selected:", JSON.stringify(selectedItem, null, 2));
+          console.log("!!!SELECTED_VALUE", JSON.stringify(dataTable?.getValue(row, column || 2), null, 2))
+        }
+      },
+    },
+  ];
+
   return (
     <div className='chart'>
-      <Chart chartType="Timeline" data={chartData} height='40em' width='99vw' />
+      <Chart chartType="Timeline" data={chartData} height='40em' width='99vw' chartEvents={chartEvents} />
     </div>
   );
 }

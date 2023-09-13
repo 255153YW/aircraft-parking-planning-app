@@ -33,12 +33,13 @@ export default function ParkingScheduler({ parkingAreas, selectedDateValue, setR
     return pSpots;
   }, [parkingAreas]);
 
+
   const renderParkingSpotOptions = useCallback(() => parkingSpots.map((pSpot, index) => {
-    const { name: pSpotName, footprintSqm } = pSpot;
+    const { name: pSpotName, footprintSqm:pSpotFootprintSqm } = pSpot;
     return (
-      <option value={index}>{pSpotName} - {footprintSqm}m2</option>
+      <option value={index} disabled={Number(footprintSqm||0) > pSpotFootprintSqm}>{pSpotName} - {pSpotFootprintSqm}m2</option>
     )
-  }), [parkingSpots]);
+  }), [parkingSpots, footprintSqm]);
 
   const clearFormData = () => {
     setRegistrationCode('');
