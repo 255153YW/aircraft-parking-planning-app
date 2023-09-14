@@ -1,14 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "8xzosLBGcydQ2iGdosuVPpBpLbyOLU0pLG2v0IRpETDVTCte9VNQqkxhK/yIuSUKxMDr3sNPfWaKwR7F5Q6z2Q==",
-  "success": false,
+  "dgSpecHash": "TMi+Hvk8MAYYOfKPzwwMgUuBxYD0OlapucTy8Zbsr3Ion6RXjAhYE8jF2qF256XeyHbXFd9iotaDGljq0pGxFw==",
+  "success": true,
   "projectFilePath": "C:\\Users\\Yohandi\\Desktop\\AircraftParkingPlanningAssignment\\AircraftParkingPlanningAssignment\\aircraft-parking-planning-app\\aircraft-parking-planning-app.csproj",
   "expectedPackageFiles": [],
-  "logs": [
-    {
-      "code": "NU1105",
-      "level": "Error",
-      "message": "Unable to read project information for 'aircraft-parking-planning-app': Invalid framework identifier ''."
-    }
-  ]
+  "logs": []
 }
