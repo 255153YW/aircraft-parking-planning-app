@@ -52,5 +52,8 @@
   "devDependencies": {
     "@types/react-datepicker": "^4.15.0",
     "@types/uuid": "^9.0.3"
+  },
+  "jest": {
+    "transformIgnorePatterns": [ "node_modules/(?!axios)/" ]
   }
 }
