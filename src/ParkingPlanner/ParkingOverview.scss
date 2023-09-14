@@ -22,8 +22,20 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    input, label, button {
+
+    input, label {
       display: block;
+    }
+
+    .form-buttons {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      input {
+        margin: 1em;
+      }
     }
   }
 }

@@ -7,6 +7,7 @@ import "./ParkingOverview.scss";
 import ParkingChart from './ParkingChart';
 import ParkingScheduler from './ParkingScheduler';
 import "react-datepicker/dist/react-datepicker.css";
+import { ParkingPlannerProvider } from './ParkingPlannerContext';
 
 export default function ParkingOverview() {
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -32,16 +33,18 @@ export default function ParkingOverview() {
     });
   }, [requestUUID]);
   return (
-    <div className='parking-overview'>
-      <h2>Flight Parking Scheduler</h2>
-      <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
-      <ParkingScheduler parkingAreas={parkingAreas} selectedDateValue={selectedDateValue} setRequestUUID={setRequestUUID} />
-      {!isLoading && !errors && flights?.length && parkingAreas?.length ?
-        <ParkingChart flights={flights} parkingAreas={parkingAreas} selectedDateValue={selectedDateValue} />
-        : errors
-          ? errors
-          : 'loading chart...'
-      }
-  </div>
+    <ParkingPlannerProvider>
+      <div className='parking-overview'>
+        <h2>Flight Parking Scheduler</h2>
+        <DatePicker onChange={setSelectedDateValue} selected={selectedDateValue} />
+        <ParkingScheduler parkingAreas={parkingAreas} selectedDateValue={selectedDateValue} setRequestUUID={setRequestUUID} />
+        {!isLoading && !errors && flights?.length && parkingAreas?.length ?
+          <ParkingChart flights={flights} parkingAreas={parkingAreas} selectedDateValue={selectedDateValue} />
+          : errors
+            ? errors
+            : 'loading chart...'
+        }
+      </div>
+    </ParkingPlannerProvider>
   );
 }

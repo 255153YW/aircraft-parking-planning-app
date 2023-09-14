@@ -26,11 +26,13 @@
 
   <ItemGroup>
     <None Remove="src\ParkingPlanner\ParkingChart.tsx" />
+    <None Remove="src\ParkingPlanner\ParkingPlannerContext.tsx" />
     <None Remove="src\ParkingPlanner\ParkingScheduler.tsx" />
   </ItemGroup>
 
   <ItemGroup>
     <TypeScriptCompile Include="src\ParkingPlanner\ParkingChart.tsx" />
+    <TypeScriptCompile Include="src\ParkingPlanner\ParkingPlannerContext.tsx" />
     <TypeScriptCompile Include="src\ParkingPlanner\ParkingScheduler.tsx" />
   </ItemGroup>
 </Project>

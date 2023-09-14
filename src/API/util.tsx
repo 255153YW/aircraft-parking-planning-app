@@ -24,7 +24,13 @@ export function post(request: DecoratedRequest) {
   axiosSettings.headers = {
     'Content-Type': 'application/json'
   }
-  console.log("!!!json-string-data", axiosSettings)
+  send(axiosSettings, request);
+}
+
+export function deleteFlight(request: DecoratedRequest) {
+  request.route = "https://localhost:7029/" + request.route;
+  const axiosSettings = createAxiosSettings(request);
+  axiosSettings.method = "DELETE";
   send(axiosSettings, request);
 }
 

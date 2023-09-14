@@ -1,16 +1,20 @@
-﻿import { useMemo } from 'react';
+﻿import { useMemo, useState, useEffect, useContext, useCallback } from 'react';
 import { Chart, ReactGoogleChartEvent } from "react-google-charts";
 import { Flight, ParkingArea, ParkingSpot, Aircraft } from "../API/parkingPlanningAPI";
 import "./ParkingOverview.scss";
 import "react-datepicker/dist/react-datepicker.css";
+import { DATA_TABLE_ROW_INDEX_UPDATE, DATA_TABLE_ROW_MAP_UPDATE, ParkingPlannerContext, SELECTED_FLIGHT_UPDATE } from './ParkingPlannerContext';
 
 interface ParkingChartProps {
   flights:Array<Flight>;
   parkingAreas: Array<ParkingArea>;
-  selectedDateValue?: Date|null;
+  selectedDateValue?: Date | null;
 }
 
 export default function ParkingChart({ flights, parkingAreas, selectedDateValue }: ParkingChartProps) {
+  const [dataTableRowFlightMap, setDataTableRowFlightMap] = useState<Array<Flight | null> | null>(null);
+  const [selectedRowIndex, setSelectedRowIndex] = useState(-1);
+  const { dispatch } = useContext(ParkingPlannerContext);
 
   const selectedDateWithoutOffset = useMemo(() => {
     let dateToConvert = new Date();
@@ -96,6 +100,8 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
       { type: "date", id: "Start" },
       { type: "date", id: "End" },
     ]);
+    setDataTableRowFlightMap(null);
+    const flightRowMap:Array<Flight|null> = [];
     parkingSpots.forEach(pSpot => {
       const { name: pSpotName } = pSpot;
       if (selectedDateWithoutOffset) {
@@ -118,6 +124,7 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
               if (startOfSelectedDay > startTimeValue) {
                 adjustedStartTime = startOfSelectedDay;
               }
+              flightRowMap.push(pSpotFlight);
               data.push([
                 pSpotName,
                 `${aircraft?.registrationCode} - ${aircraft?.aircraftType} - ${aircraft?.footprintSqm}m2`,
@@ -129,6 +136,7 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
             }
           })
         } else {
+          flightRowMap.push(null);
           data.push([
             pSpotName,
             '',
@@ -139,30 +147,41 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
           ]);
         }
       }
-    })
+    });
+    setDataTableRowFlightMap(flightRowMap);
     return data;
   }, [parkingSpots, parkedFlightsDictionary, selectedDateWithoutOffset]);
 
-  const chartEvents: ReactGoogleChartEvent[] = [
-    {
-      eventName: "select",
-      callback: ({ chartWrapper }) => {
-        const chart = chartWrapper.getChart();
-        const selection = chart.getSelection();
-        if (selection.length === 1) {
-          const [selectedItem] = selection;
-          const dataTable = chartWrapper.getDataTable();
-          const { row, column } = selectedItem;
-          console.log("You selected:", JSON.stringify(selectedItem, null, 2));
-          console.log("!!!SELECTED_VALUE", JSON.stringify(dataTable?.getValue(row, column || 2), null, 2))
-        }
-      },
+  const chartEvents = useMemo((): ReactGoogleChartEvent[] => [
+      {
+          eventName: "select",
+          callback: ({ chartWrapper }) => {
+              const chart = chartWrapper.getChart();
+              const selection = chart.getSelection();
+              if (selection.length === 1) {
+                  const [selectedItem] = selection;
+                  const { row } = selectedItem;
+                  setSelectedRowIndex(row);
+              }
+          },
     },
-  ];
+  ], [setSelectedRowIndex]);
+
+  useEffect(() => {
+    if (selectedRowIndex > -1 && dataTableRowFlightMap) {
+      dispatch({ type: DATA_TABLE_ROW_MAP_UPDATE, dataTableRowFlightMapUpdate: dataTableRowFlightMap })
+      dispatch({ type: DATA_TABLE_ROW_INDEX_UPDATE, dataTableRowIndexUpdate: selectedRowIndex });
+      dispatch({ type: SELECTED_FLIGHT_UPDATE, selectedFlightUpdate: dataTableRowFlightMap[selectedRowIndex] });
+    }
+  }, [dataTableRowFlightMap, dispatch, selectedRowIndex]);
+
+  const timelineChart = useMemo(() => {
+    return <Chart chartType="Timeline" data={chartData} height='40em' width='99vw' chartEvents={chartEvents} />
+  }, [chartData, chartEvents]);
 
   return (
     <div className='chart'>
-      <Chart chartType="Timeline" data={chartData} height='40em' width='99vw' chartEvents={chartEvents} />
+      {timelineChart}
     </div>
   );
 }
