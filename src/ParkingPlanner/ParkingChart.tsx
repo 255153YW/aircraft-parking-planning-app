@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect, useContext, useCallback } from 'react';
+﻿import { useMemo, useState, useEffect, useContext } from 'react';
 import { Chart, ReactGoogleChartEvent } from "react-google-charts";
 import { Flight, ParkingArea, ParkingSpot, Aircraft } from "../API/parkingPlanningAPI";
 import "./ParkingOverview.scss";
@@ -164,14 +164,16 @@ export default function ParkingChart({ flights, parkingAreas, selectedDateValue 
                   setSelectedRowIndex(row);
               }
           },
-    },
+      },
   ], [setSelectedRowIndex]);
 
   useEffect(() => {
-    if (selectedRowIndex > -1 && dataTableRowFlightMap) {
-      dispatch({ type: DATA_TABLE_ROW_MAP_UPDATE, dataTableRowFlightMapUpdate: dataTableRowFlightMap })
-      dispatch({ type: DATA_TABLE_ROW_INDEX_UPDATE, dataTableRowIndexUpdate: selectedRowIndex });
-      dispatch({ type: SELECTED_FLIGHT_UPDATE, selectedFlightUpdate: dataTableRowFlightMap[selectedRowIndex] });
+    if (dataTableRowFlightMap) {
+      dispatch({ type: DATA_TABLE_ROW_MAP_UPDATE, dataTableRowFlightMapUpdate: dataTableRowFlightMap });
+      if (selectedRowIndex > -1) {
+        dispatch({ type: DATA_TABLE_ROW_INDEX_UPDATE, dataTableRowIndexUpdate: selectedRowIndex });
+        dispatch({ type: SELECTED_FLIGHT_UPDATE, selectedFlightUpdate: dataTableRowFlightMap[selectedRowIndex] });
+      }
     }
   }, [dataTableRowFlightMap, dispatch, selectedRowIndex]);
 

@@ -41,7 +41,7 @@ const ParkingScheduler = ({ parkingAreas, selectedDateValue, setRequestUUID }: P
       const { aircraft, startDateTime, endDateTime, parkingSpot } = selectedFlight;
       if (aircraft && startDateTime && endDateTime && parkingSpot) {
         const { registrationCode, aircraftType, footprintSqm } = aircraft;
-        const { name: pSpotName, footprintSqm: pFootprintSqm } = parkingSpot;
+        const { name: pSpotName } = parkingSpot;
         setRegistrationCode(registrationCode || '');
         setAircraftType(aircraftType || '');
         setFootprintSqm(footprintSqm ? footprintSqm.toString() : '0');
@@ -52,12 +52,45 @@ const ParkingScheduler = ({ parkingAreas, selectedDateValue, setRequestUUID }: P
     }
   }, [parkingPlannerState, parkingSpots])
 
+  const parkingSpotUsageDictionary = useMemo(() => {
+    const { dataTableRowFlightMap } = parkingPlannerState;
+    const spaceUsageDictionary = new Map<string, number>();
+
+    if (dataTableRowFlightMap && startDateTimeValue && endDateTimeValue) {
+      dataTableRowFlightMap.forEach(rowFlight => {
+        if (rowFlight) {
+          const { parkingSpot, aircraft, startDateTime: existingStartDateTime, endDateTime: existingEndDateTime } = rowFlight;
+          if (parkingSpot && aircraft && existingEndDateTime && existingStartDateTime
+            && endDateTimeValue > startDateTimeValue
+            && ((new Date(existingEndDateTime) > startDateTimeValue) && (new Date(existingStartDateTime) < endDateTimeValue)) 
+          ) {
+            const { name: pSpotName } = parkingSpot;
+            const { footprintSqm } = aircraft;
+            const aircraftFootprint = footprintSqm ?? 0;
+            const existingUsage = spaceUsageDictionary.get(pSpotName);
+            if (existingUsage) {
+              spaceUsageDictionary.set(pSpotName, (existingUsage + aircraftFootprint));
+            } else {
+              spaceUsageDictionary.set(pSpotName, aircraftFootprint);
+            }
+          }
+        }
+      });
+    }
+    return spaceUsageDictionary;
+  }, [endDateTimeValue, parkingPlannerState, startDateTimeValue])
+
   const renderParkingSpotOptions = useCallback(() => parkingSpots.map((pSpot, index) => {
-    const { name: pSpotName, footprintSqm:pSpotFootprintSqm } = pSpot;
+    const { name: pSpotName, footprintSqm: pSpotFootprintSqm } = pSpot;
+    const spotUsage = parkingSpotUsageDictionary.get(pSpotName) ?? 0;
+    const remainingSpot = pSpotFootprintSqm - spotUsage;
+    const isSpotFull = (remainingSpot <= 0);
     return (
-      <option value={index} disabled={Number(footprintSqm||0) > pSpotFootprintSqm}>{pSpotName} - {pSpotFootprintSqm}m2</option>
+      <option value={index} disabled={isSpotFull || (Number(footprintSqm ?? 0) > remainingSpot)}>
+        {pSpotName} - ({remainingSpot} of {pSpotFootprintSqm})m2 free
+      </option >
     )
-  }), [parkingSpots, footprintSqm]);
+  }), [parkingSpots, footprintSqm, parkingSpotUsageDictionary]);
 
   const clearFormData = () => {
     setRegistrationCode('');
@@ -143,6 +176,12 @@ const ParkingScheduler = ({ parkingAreas, selectedDateValue, setRequestUUID }: P
       <input value={aircraftType} onChange={e => setAircraftType(e.target.value)} placeholder='aircraft type' disabled={isFormDisabled} required />
       <input value={footprintSqm} type='number' onChange={e => setFootprintSqm(e.target.value)} placeholder='footprint (m2)' disabled={isFormDisabled} required />
 
+      <p>Start Date</p>
+      <DatePicker onChange={setStartDateTimeValue} selected={startDateTimeValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
+
+      <p>End Date</p>
+      <DatePicker onChange={setEndDateTimeValue} selected={endDateTimeValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
+
       <p>Parking Spot</p>
       <select
         value={selectedParkingSpotIndex}
@@ -153,12 +192,6 @@ const ParkingScheduler = ({ parkingAreas, selectedDateValue, setRequestUUID }: P
         <option value=''>-- Select Parking Spot --</option>
         {renderParkingSpotOptions()}
       </select>
-
-      <p>Start Date</p>
-      <DatePicker onChange={setStartDateTimeValue} selected={startDateTimeValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
-
-      <p>End Date</p>
-      <DatePicker onChange={setEndDateTimeValue} selected={endDateTimeValue} showTimeSelect dateFormat="Pp" disabled={isFormDisabled} required />
       <p></p>
       {formButtons}
       {errors &&
